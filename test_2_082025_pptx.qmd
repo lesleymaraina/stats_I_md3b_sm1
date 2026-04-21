@@ -1,0 +1,578 @@
+---
+title: "Understanding Estimates Through Uncertainty"
+author: "Lesley Chapman Hannah, Ph.D., M.S."
+
+format: pptx
+
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r setup, echo=FALSE}
+library(tidyverse)
+library(scales)
+
+set.seed(314)
+
+ckd_df <- tibble(
+  id = 1:120,
+  treatment = rep(c("Standard care", "Intervention"), each = 60),
+  egfr = c(
+    rnorm(60, mean = 58, sd = 11),
+    rnorm(60, mean = 63, sd = 11)
+  ),
+  response = c(
+    rbinom(60, 1, 0.35),
+    rbinom(60, 1, 0.52)
+  ),
+  age = round(rnorm(120, mean = 62, sd = 9)),
+  bmi = round(rnorm(120, mean = 30, sd = 4), 1)
+)
+
+mean_ci_df <- ckd_df |>
+  summarise(
+    n = n(),
+    mean_egfr = mean(egfr),
+    sd_egfr = sd(egfr),
+    se_mean = sd_egfr / sqrt(n),
+    t_crit = qt(0.975, df = n - 1),
+    margin_error = t_crit * se_mean,
+    lower = mean_egfr - margin_error,
+    upper = mean_egfr + margin_error
+  )
+
+sample_size_demo <- tibble(
+  n = c(20, 40, 80, 160, 320),
+  assumed_sd = 11
+) |>
+  mutate(
+    se_mean = assumed_sd / sqrt(n),
+    t_crit = qt(0.975, df = n - 1),
+    margin_error = t_crit * se_mean,
+    approx_width = 2 * margin_error
+  )
+```
+
+
+
+### Review: Estimation in Analysis
+::: {style="font-size:0.65em"}
+
+estimation is the process of evaluating how that number behaves across repeated sampling
+
+the following statistical estimation concepts were established:
+
+
+- **population quantity [parameter]** : defines the scientific target
+
+  - example: mean eGFR, disease prevalence
+
+- **sample-based estimator**: provides a way to approximate that quantity
+
+  - example: sample mean, sample proportion
+
+- **point estimate** : summarizes observed data into a single value
+
+Evaluation of estimators using two key properties:
+
+  - bias [accuracy]
+    
+    - whether the estimator is centered on the true parameter         across repeated samples
+
+  - variance [precision]
+
+    - how much the estimate varies from one sample to another
+
+::: 
+---
+
+### Extending Estimation
+
+::: {style="font-size:0.6em"}
+
+- previously we discussed that estimation is a task that involves using sample data to learn about an unknown population quantity
+- point estimate is single  realization from a repeated-sampling process 
+- estimators must be judged by their behavior across samples, including bias and variability
+
+Current lecture addresses the following idea:
+
+> point estimate provides a single value, but scientific conclusions require an assessment of how much uncertainty surrounds that value
+
+:::
+
+------------------------------------------------------------------------
+
+### Extending Estimation
+
+::: {style="font-size:0.6em"}
+
+
+Lecture concepts:
+
+- Interval estimates extend point estimates by accounting for sampling variability, providing a range of values that are consistent with the data rather than a single value alone
+
+- Every estimate is subject to sampling variability, meaning that a different sample from the same population would produce a different value
+
+- Interval estimates provide a range that reflects this variability, indicating how stable the estimate is and how close it is likely to be to the true population quantity
+:::
+
+--------
+
+
+### Review: Point Estimates
+
+::: {style="font-size:0.66em"}
+**point estimate** : metric that uses sample data to produce one numerical value for a population parameter
+
+Examples include:
+
+-   sample mean as an estimate of a population mean
+-   sample proportion as an estimate of a population proportion
+-   differences in mean - observed treatment difference as an estimate of a population effect
+
+point estimates do not show how much the estimate could vary from sample to sample
+
+:::
+
+------------------------------------------------------------------------
+
+### Point Estimate Limitations
+
+::: {style="font-size:0.67em"}
+
+Background: suppose a study reports that the sample mean eGFR is 60.8 mL/min/1.73 m²
+
+Unaddressed questions:
+
+  - How much would this estimate change if the study were repeated?
+  - Is the mean estimated precisely, or only roughly?
+  - Are nearby values such as 59, 61, or 64 still plausible for the population mean?
+
+- point estimates alone include no information about variability
+
+- two studies can report the same estimate while differing in precision
+
+- interval estimates provide a range that reflects variability and makes those differences visible
+:::
+
+------------------------------------------------------------------------
+
+
+### Interval Estimates
+
+::: {style="font-size:0.66em"}
+
+
+**interval estimate** : 
+
+  - range of values used to estimate a population parameter 
+
+  - extends the point estimate by giving a range of plausible values for the population parameter
+
+Point Estimate versus Interval Estimate:
+
+-   point estimate: best single-number summary from the sample
+
+  - Answers: what was observed in this sample?
+  
+-   interval estimate: range of values compatible with the sample and its uncertainty**
+  
+  - Answers: what does the sample suggests about the population, allowing for sampling variability?
+  
+:::
+
+-------
+
+### Defining Interval Estimates
+
+::: {style="font-size:0.67em"}
+
+- **interval estimate** : sample-based range of values used to estimate an unknown population parameter
+
+- range of values computed from sample data that estimates an unknown population quantity while incorporating sampling uncertainty
+
+Properties of interval estimates:
+
+-   constructed from the observed sample
+-   targets a population quantity, not just the sample itself
+-   reflects sampling variability by indicating that the estimate could differ across repeated samples
+
+
+
+:::
+
+------------------------------------------------------------------------
+
+### Defining Confidence Interval
+
+::: {style="font-size:0.67em"}
+
+- interval estimates involve generating a range of numbers within which the parameter is expected to lie so that within a chosen degree of confidence the true unknown parameter is capture inside the interval
+
+- point estimates will differ from the population parameter due to the sampling error and it is difficult to approximate how close the point estimate is to the actual parameter
+
+- **confidence interval** : 
+
+  - interval estimate constructed from sample data along with a stated confidence level
+  
+  - value generated such that over repeated samples, a specified proportion of such intervals will contain the true population parameter
+
+Example:
+
+- 95% confidence interval (CI) - under repeated sampling the 95% CI captures the true population parameter about 95% of the time
+
+
+:::
+
+------------------------------------------------------------------------
+
+### Confidence Intervals and Interval Estimation
+
+::: {style="font-size:0.67em"}
+
+`confidence interval` : frequentist method for converting a point estimate and its sampling variability into an interval estimate for a population parameter
+
+confidence intervals within the  sequence of estimation:
+
+1. **identify the population quantity of interest**
+
+ Example: mean, proportion, or difference between groups
+
+2. **compute a point estimate from the sample**
+
+  a single value summarizing the observed data
+
+3. **quantify sampling variability**
+  
+  assess how much the estimate would vary across repeated samples [standard error]
+
+
+:::
+
+------------------------------------------------------------------------
+
+### Confidence Intervals and Interval Estimation
+
+::: {style="font-size:0.67em"}
+
+`confidence interval` : frequentist method for converting a point estimate and its sampling variability into an interval estimate for a population parameter
+
+confidence intervals within the  sequence of estimation:
+
+
+4. **construct an interval estimate**
+
+  represent that variability as a range of plausible values
+  
+5. **interpret the interval estimate**
+
+  use the confidence interval to identify which values of the       population parameter are consistent with the observed data and    to assess the precision of the estimate
+
+:::
+
+------------------------------------------------------------------------
+
+
+
+
+### Confidence Interval Versus Standard Deviation
+
+::: {style="font-size:0.67em"}
+
+- **standard deviation** : variability among observed individual values in the sample
+
+- **confidence interval** : range for the population parameter based on the sample estimate and its uncertainty
+
+Examples:
+
+-   **standard deviation**: spread of patient-level values
+
+  e.x.: eGFR values vary greatly from patient to patient, that affects the standard deviation
+  
+-   **confidence interval**: plausible range for the population parameter
+
+  e.x.: how precisely the mean eGFR has been estimated
+  
+:::
+
+------------------------------------------------------------------------
+
+
+
+### Simulated Biomedical Dataset
+
+::: {style="font-size:0.55em"}
+```{r}
+ckd_df |>
+  slice_head(n = 6)
+```
+
+- dataset represents a simulated cohort of patients with chronic kidney disease (CKD) $\rightarrow$ condition characterized by a gradual decline in kidney function over time
+
+- one row per patient
+
+- `egfr` is a continuous measure of kidney function
+
+- `response` is a binary indicator of clinical response
+
+- `treatment` identifies the patient group
+
+
+
+:::
+
+------------------------------------------------------------------------
+
+### Constructing a 95% Confidence Interval 
+
+::: {style="font-size:0.55em"}
+```{r}
+library(tidyverse)
+
+summary_df <- ckd_df |>
+  summarise(
+    n = n(),
+    mean_egfr = mean(egfr),
+    sd_egfr = sd(egfr),
+    se_egfr = sd_egfr / sqrt(n),
+    lower = mean_egfr - 1.96 * se_egfr,
+    upper = mean_egfr + 1.96 * se_egfr
+  )
+
+summary_df
+```
+**Interpretation**
+
+construct a 95% confidence interval for the population mean eGFR:
+
+-   `n`[120]: sample size
+-   `mean_egfr`[59.79] : point estimate of population mean
+-   `sd_egfr`[11.31] : sample standard deviation $\rightarrow$ patient-to-patient spread
+-   `se_mean`[1.03] : standard error of the mean $\rightarrow$ estimate-to-estimate variability
+
+-   `lower` and `upper`[57.77, 61.81]: confidence interval endpoints - range of plausible values for the population mean eGFR
+
+:::
+
+------------------------------------------------------------------------
+
+
+
+### Visualizing the Mean and Its Confidence Interval
+
+::: {style="font-size:0.55em"}
+```{r, echo=FALSE}
+#| fig-width: 4
+#| fig-height: 3
+#| 
+plot <- ggplot(summary_df, aes(x = 1, y = mean_egfr)) +
+  geom_point(size = 1.5) +   # smaller dot
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.1) +
+  labs(
+    title = "Mean eGFR with 95% Confidence Interval",
+    x = "",
+    y = "eGFR"
+  ) +
+  coord_cartesian(ylim = c(0, NA), xlim = c(0, 2)) +
+  theme_bw()
+
+plot
+```
+
+**Interpretation**
+
+- plot shows the estimate of the mean and the uncertainty attached to that estimate
+- point : sample mean
+- vertical bar : confidence interval
+
+- interval is narrow : mean has been estimated with relatively high precision
+
+- Note: if the interval is wide: $\uparrow$ sampling uncertainty about the population mean
+
+:::
+
+------------------------------------------------------------------------
+
+### Sample Size, Standard Error, and Confidence Intervals
+
+::: {style="font-size:0.6em"}
+How Sample Size Affects Precision and Uncertainty
+
+Standard error is defined as:
+
+$$
+SE(\bar{x}) = \frac{s}{\sqrt{n}}
+$$
+
+- as n increases → *SE* decreases
+- as standard error decreases → estimates vary less across repeated samples
+
+
+:::
+
+------------------------------------------------------------------------
+
+### Sample Size, Standard Error, and Confidence Intervals
+
+::: {style="font-size:0.6em"}
+
+
+Confidence intervals are constructed using the standard error:
+
+$$
+Estimate±(\text{critical value})×SE
+$$
+
+- smaller SE → narrower confidence intervals
+- larger SE → wider confidence intervals
+- larger samples → more stable estimates and tighter intervals
+- smaller samples → more variability and wider intervals
+- in research, larger studies produce more precise estimates of population quantities
+
+:::
+
+------------------------------------------------------------------------
+
+### Confidence Intervals and Sample Size
+
+::: {style="font-size:0.6em"}
+```{r, echo=FALSE}
+set.seed(29)
+
+sample_sizes <- c(30, 100, 300, 1000)
+
+ci_df <- map_df(sample_sizes, function(n) {
+  sample_data <- ckd_df |> sample_n(n, replace = TRUE)
+  
+  tibble(
+    n = n,
+    mean = mean(sample_data$egfr),
+    se = sd(sample_data$egfr) / sqrt(n),
+    lower = mean - 1.96 * se,
+    upper = mean + 1.96 * se
+  )
+})
+
+ci_df
+```
+
+Hypothesis as `n` increases:
+
+-   `se_mean` decreases [mean eGFR]
+-   `margin_error` decreases
+-   `approx_width` of the interval decreases
+
+:::
+
+------------------------------------------------------------------------
+
+### Plot: Confidence Intervals vs Sample Size
+
+::: {style="font-size:0.64em"}
+```{r, echo=FALSE}
+
+#| fig-width: 4
+#| fig-height: 3
+
+
+plot <- ggplot(ci_df, aes(x = n, y = mean)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = lower, ymax = upper)) +
+  labs(
+    title = "Confidence Interval Width vs Sample Size",
+    x = "Sample Size",
+    y = "Mean eGFR"
+  ) +
+  theme_bw()
+
+plot
+```
+
+**Interpretation**
+
+- plot shows how the estimate of mean eGFR and its associated 95% confidence interval change as sample size increases
+:::
+
+------------------------------------------------------------------------
+
+### Plot: Confidence Intervals vs Sample Size
+
+::: {style="font-size:0.64em"}
+
+
+**Plot Interpretation**
+
+
+- point is a sample mean eGFR
+- vertical line is the 95% confidence interval around that estimate
+- estimates cluster around a similar value (~60 eGFR)
+- as sample size increases $\rightarrow$ confidence intervals become narrower
+- center of the estimates remains stable across sample sizes
+:::
+
+------
+
+
+
+
+### Putting Together Key Concepts
+
+::: {style="font-size:0.68em"}
+
+1.  A **point estimate** gives one numerical estimate of a population quantity
+2.  An **interval estimate** adds uncertainty by giving a range of plausible values
+3.  A **confidence interval** is a specific kind of interval estimate with a repeated-sampling confidence interpretation
+4.  Larger samples reduce the standard error $\rightarrow$ narrowing the confidence interval and improving precision
+
+:::
+
+------------------------------------------------------------------------
+
+### Summary
+
+::: {style="font-size:0.70em"}
+- statistical analysis often involves estimating population quantities using sample data
+
+across repeated samples:
+
+- estimates vary due to **sampling variability**  
+- estimators can be evaluated by:
+  - **bias** (accuracy)
+  - **variance** (precision)
+
+- point estimates summarize observed data but do not reflect uncertainty.
+
+  
+:::
+
+
+---
+
+### Summary
+
+::: {style="font-size:0.70em"}
+
+
+- **standard error (SE)** quantifies estimate variability  
+
+$$
+SE = \frac{s}{\sqrt{n}}
+$$
+
+- **confidence intervals (CI)** provide a range of plausible values:
+
+$$
+\text{Estimate} \pm (\text{critical value}) \times SE
+$$
+
+
+- larger sample size → smaller SE → narrower intervals  
+- intervals reflect precision of the estimate  
+  
+:::
+
+
+---
+

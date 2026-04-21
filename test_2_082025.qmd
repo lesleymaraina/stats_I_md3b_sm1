@@ -1,0 +1,734 @@
+---
+title: "Estimation and Interpretation of Group Differences"
+author: "<br><br><span style='font-size:25px;'><strong>Lesley Chapman Hannah, Ph.D., M.S.</strong></span><br>College of Graduate Studies<br>Northeast Ohio Medical University"
+
+format:
+  revealjs:
+    theme: simple
+    slide-number: true
+    transition: fade
+    chalkboard: true
+    smaller: false
+execute:
+  echo: true
+  warning: false
+  message: false
+editor: visual
+---
+
+```{r setup, echo=FALSE}
+library(tidyverse)
+library(broom)
+library(scales)
+library(epitools)
+
+set.seed(2026)
+
+n_treat <- 220
+n_control <- 220
+
+trial_df <- tibble(
+  id = 1:(n_treat + n_control),
+  treatment = c(rep("New therapy", n_treat), rep("Standard care", n_control)),
+  response = c(
+    rbinom(n_treat, 1, 0.68),
+    rbinom(n_control, 1, 0.52)
+  ),
+  serious_ae = c(
+    rbinom(n_treat, 1, 0.12),
+    rbinom(n_control, 1, 0.20)
+  ),
+  egfr_change = c(
+    rnorm(n_treat, mean = 4.8, sd = 9.5),
+    rnorm(n_control, mean = 1.4, sd = 9.8)
+  ),
+  age = round(rnorm(n_treat + n_control, mean = 59, sd = 11)),
+  bmi = round(rnorm(n_treat + n_control, mean = 30, sd = 5), 1)
+)
+```
+
+### From Single-Group Estimation to Comparative Estimation
+
+::: {style="font-size:0.63em"}
+In the previous section, we discussed how estimation works for a single population quantity:
+
+-   point estimates for one mean or one proportion\
+-   sampling variability and standard error\
+-   confidence intervals for a single parameter
+
+In the current lecture we will focus on comparative estimation
+
+> How different are two groups, and how should that difference be estimated and interpreted?
+
+**Biomedical examples**: clinical trials, comparative effectiveness studies, and treatment evaluations are designed to estimate between-group effects
+:::
+
+------------------------------------------------------------------------
+
+### Estimation for Comparing Groups
+
+::: {style="font-size:0.66em"}
+Central Goal: discuss statistical estimation for group comparisons
+
+Discuss the following comparative estimands:
+
+-   difference in sample means for a continuous outcome\
+-   risk difference for a binary outcome\
+-   risk ratio for a binary outcome\
+-   odds and odds ratios for a binary outcome
+
+Each comparative estimand follows the same general framework:
+
+- estimate the outcome within each group\
+- compare groups on an interpretable scale\
+- use confidence intervals to judge both magnitude and precision
+:::
+
+-----------------------------------------------------------------
+
+### Review: Statistical Estimation
+
+::: {style="font-size:0.66em"}
+
+- statistical estimation involves turning observed sample data into evidence about an unknown population quantity
+
+- for estimand comparisons, estimation answers a question like this:
+
+> based on the differences observed in the study sample, what is the best estimate of the corresponding treatment effect in the population?
+
+Process inovlves the following:
+
+1. define the population quantity of interest  
+2. calculate a sample-based quantity that targets it  
+3. interpret that quantity as an estimate of the underlying effect  
+
+
+:::
+
+---
+
+### Estimating Differences Between Groups
+
+::: {style="font-size:0.6em"}
+
+- goal is to understand how two groups differ:
+
+- treatment vs control  
+- exposed vs unexposed  
+- biomarker-positive vs biomarker-negative  
+
+We are now estimating:
+
+> a contrast between two population quantities
+
+:::
+
+---
+
+### Defining the Estimand in Group Comparisons
+
+::: {style="font-size:0.66em"}
+
+Review:
+
+- **estimand [what we want to learn]** : population quantity we aim to learn about
+
+- **estimator [method used to estimate target]**: rule or formula used to approximate the estimand using sample data
+
+
+In a two-group comparison, the estimand shows the relationship between two population quantities, such as:
+
+- difference in population means  
+- difference in population probabilities  
+- ratio of population probabilities  
+- ratio of population odds  
+
+:::
+
+---
+
+### Defining How Groups Differ: Multiple Comparative Measures
+
+::: {style="font-size:0.66em"}
+
+In a two-group study, the data provide:
+
+- an outcome in the treatment group  
+- an outcome in the control group  
+
+From these, we can estimate **how the groups differ**
+
+But there is not just one way to define that difference.
+
+Differences between groups [treatment effect] can be framed as:
+
+- **absolute change** in outcome  
+- **relative change** in outcome  
+- comparison of **event vs non-event likelihood**  
+
+Each of which defines a different population quantity [estimand] that the study is trying to estimate
+
+
+:::
+---
+
+### Defining How Groups Differ: Multiple Comparative Measures
+
+::: {style="font-size:0.66em"}
+
+Multiple comparative measures can exist within a study:
+
+- **mean difference** → estimates difference in population averages  
+- **risk difference** → estimates absolute difference in probabilities  
+- **risk ratio** → estimates relative difference in probabilities
+- **odds ratio** → estimates difference on the odds scale  
+
+What changes is:
+
+> **the question we are asking about how the groups differ in the population**
+
+:::
+---
+
+## The Structure of All Comparative Estimators
+
+::: {style="font-size:0.66em"}
+
+comparative measures follow a similar estimation structure:
+
+1. estimate the outcome in each group  
+2. combine those estimates into a comparison  
+3. interpret that comparison as a population effect  
+
+
+
+:::
+
+---
+
+### Mean Difference
+
+$$
+\widehat{\Delta} = \bar{x}_1 - \bar{x}_0
+$$
+
+::: {style="font-size:0.66em"}
+ 
+Mean Difference:
+
+- **mean difference** is the difference between the average outcome in two groups.
+
+- $\bar{x}_1$: sample mean in the treatment group  
+- $\bar{x}_0$: sample mean in the control group  
+
+quantity is used to estimate the corresponding population mean difference:$\mu_1 - \mu_0$ - true difference in average outcome between the two groups in the full population
+
+
+estimator of the population mean difference: $\mu_1 - \mu_0$
+
+
+:::
+
+---
+
+### Risk Difference 
+
+$$
+\widehat{RD} = \hat{p}_1 - \hat{p}_0
+$$
+
+::: {style="font-size:0.6em"}
+
+**risk difference** : sample-based estimate of the true absolute difference in event probability between groups in the population
+
+
+For a binary outcome, each group has a population event probability:
+
+- $p_1$: true probability of the event in the treatment group population  
+- $p_0$: true probability of the event in the control group population  
+
+
+study provides sample-based estimates because the population probabilities are unknown because the full population is not observed:
+
+- $\hat{p}_1$: observed event proportion in the treatment group  
+- $\hat{p}_0$: observed event proportion in the control group  
+
+
+:::
+---
+
+### Risk Difference 
+
+$$
+\widehat{RD} = \hat{p}_1 - \hat{p}_0
+$$
+
+::: {style="font-size:0.6em"}
+
+  
+
+**Risk difference** compares these two probabilities and asks:
+
+> how many probability units apart are the groups?
+
+Therefore
+
+$$
+\widehat{RD} = \hat{p}_1 - \hat{p}_0
+$$
+
+is used to estimate:
+
+> $RD = p_1 - p_0$
+
+the true **difference in event probability** between treatment and control in the population
+
+:::
+---
+
+
+### Risk Difference 
+
+::: {style="font-size:0.6em"}
+
+Example:
+
+Consider a clinical trial comparing a new therapy to standard care, where the outcome is **treatment response** (yes/no)
+
+Suppose the observed response probabilities in the sample are:
+
+- treatment group: $\hat{p}_1 = 0.62$  
+- control group: $\hat{p}_0 = 0.48$  
+
+
+
+if the treatment response probability is 0.62 and the control response probability is 0.48, then the estimand risk difference is:
+
+$$
+\widehat{RD} = 0.62 - 0.48 = 0.14
+$$
+
+Interpretation: there is an estimated **14 percentage-point increase** in response probability under treatment
+
+:::
+
+---
+
+
+### Risk Ratio 
+
+$$
+\widehat{RR} = \frac{\hat{p}_1}{\hat{p}_0}
+$$
+
+::: {style="font-size:0.66em"}
+
+risk ratio : 
+
+  - estimator of the population relative risk
+  - quantifies how many times larger [or smaller] the outcome probability is in one group compared to another
+
+risk ratio compares two estimated probabilities:
+
+- **numerator**: $\hat{p}_1$  
+  → outcome probability for the treatment group
+  → e.x.: estimated probability of the outcome in the **treatment group**
+
+- **denominator**: $\hat{p}_0$  
+  → outcome probability for the control group
+  → e.x.: estimated probability of the outcome in the **control group**
+
+:::
+
+---
+
+### Risk Ratio 
+
+$$
+\widehat{RR} = \frac{\hat{p}_1}{\hat{p}_0}
+$$
+
+::: {style="font-size:0.66em"}
+
+Question:
+
+> how many times as likely is the outcome in the treatment group compared to the control group?
+
+**Interpretation**
+
+- $\widehat{RR} = 1$ → equal probabilities  
+- $\widehat{RR} > 1$ → outcome more likely in treatment  
+- $\widehat{RR} < 1$ → outcome less likely in treatment  
+:::
+
+---
+
+### Odds and Odds Ratio 
+
+$$
+\widehat{OR} = \frac{\hat{p}_1/(1-\hat{p}_1)}{\hat{p}_0/(1-\hat{p}_0)}
+$$
+
+::: {style="font-size:0.6em"}
+
+
+**odds ratio**
+
+  - metric measures the association between two groups by          comparing their odds
+  -  sample-based estimate of how the odds of an outcome differ    between groups in the population [expressed on an odds scale]
+
+Note:
+
+- probabilities describe frequency of events  
+- odds describe event relative to non-event  
+
+**Important distinction**
+
+- **probability** ($p$): proportion of individuals who experience the event  
+- **odds** ($p/(1-p)$): ratio of event probability to non-event probability  
+
+:::
+---
+
+### Comparing Groups Using Different Measures
+
+::: {style="font-size:0.66em"}
+
+Each measure estimates a different type of population comparision between groups, and answer:
+
+> how do outcomes differ between groups in the population?
+
+Where:
+
+- Mean difference → difference in averages  
+- Risk difference → difference in probabilities  
+- Risk ratio → relative probability  
+- Odds ratio → relative odds  
+
+:::
+
+---
+
+### Clinical Trial Context: Defining the Treatment Effect
+
+::: {style="font-size:0.63em"}
+Consider a randomized clinical study evaluating a **new therapy** compared to **standard care**
+
+Study Goal: estimate how the treatment changes those outcomes in the target population
+
+Key outcomes of interest include:
+
+- **Clinical response** [binary]: did the patient respond to treatment?  
+- **Serious adverse events** [binary]: did the patient experience a harmful event?  
+- **Change in kidney function (eGFR)** [continuous]: how much did kidney function improve or decline?  
+
+
+**Connection to estimation**
+
+- outcomes are measured on different scales, the treatment effect must be defined and estimated differently:
+
+- **mean difference** : estimates difference in average eGFR change  
+- **risk difference** : estimates absolute difference in probability (response or adverse event)  
+- **risk ratio** : estimates relative difference in probability  
+- **odds ratio** : estimates difference on the odds scale  
+
+:::
+
+------------------------------------------------------------------------
+
+### Dataset Overview
+
+::: {style="font-size:0.6em"}
+
+```{r, echo=FALSE}
+trialdf <- trial_df |>
+  slice_head(n = 6)
+
+trialdf
+```
+
+-  each row represents one trial participant
+
+-   `treatment` : identifies the treatment arm\
+-   `response` : coded 1 for clinical response and 0 for no response\
+-   `serious_ae` : coded 1 for a serious adverse event and 0 for none\
+-   `egfr_change` : change in estimated glomerular filtration rate from baseline to follow-up
+
+::: 
+
+------------------------------------------------------------------------
+
+
+### Difference in Sample Means
+
+::: {style="font-size:0.6em"}
+$$
+\widehat{\Delta} = \bar{x}_1 - \bar{x}_0
+$$
+
+estimated mean difference between two groups
+
+-   $\widehat{\Delta}$ : estimated population mean difference\
+    - difference in eGFR change\ 
+-   $\bar{x}_1$ : sample mean in group 1\
+    - sample mean eGFR change in the **new therapy group**\
+-   $\bar{x}_0$ : sample mean in group 0\
+    - sample mean eGFR change in the **standard care group**
+
+- positive value : average outcome is higher in group 1\
+- negative value : average outcome is lower in group 1
+
+estimated difference in **average change in eGFR** between treatment groups
+
+Measure compares:
+
+> average change in kidney function for patients receiving the new therapy  
+> vs  
+> average change in kidney function for patients receiving standard care  
+
+::: 
+-----------------------------------------------------------------
+
+### Group Means for eGFR Change
+::: {style="font-size:0.6em"}
+```{r}
+egfr_summary <- trial_df |>
+  group_by(treatment) |>
+  summarise(
+    n = n(),
+    mean_egfr_change = mean(egfr_change),
+    sd_egfr_change = sd(egfr_change)
+  )
+
+egfr_summary
+```
+
+**Interpretation**
+
+**Average outcome within a treatment group**
+
+→ on average, patients receiving the new therapy improved by **5.65 eGFR units**
+→ on average, patients receiving standard care improved by **1.01 eGFR units**
+
+
+**Estimated treatment effect**
+
+$$
+\widehat{\Delta}=5.65−1.01=4.64
+$$
+Estimated difference in average kidney-function change between trial arms:
+
+- patients receiving the new therapy improved **4.64 eGFR units** more than patients receiving standard care
+- positive value means the new-therapy group had a larger average improvement than standard care
+::: 
+-----------------------------------------------------------------
+
+
+
+### Plot of Mean eGFR Change by Group
+::: {style="font-size:0.6em"}
+```{r, echo=FALSE}
+egfr_ci_df <- trial_df |>
+  group_by(treatment) |>
+  summarise(
+    n = n(),
+    mean_egfr_change = mean(egfr_change),
+    sd_egfr_change = sd(egfr_change),
+    se = sd_egfr_change / sqrt(n),
+    lower = mean_egfr_change - qt(0.975, df = n - 1) * se,
+    upper = mean_egfr_change + qt(0.975, df = n - 1) * se
+  )
+
+plot <- ggplot(egfr_ci_df, aes(x = treatment, y = mean_egfr_change)) +
+  geom_point(size = 3) +
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.08) +
+  labs(
+    title = "Mean Change in eGFR With 95% Confidence Intervals",
+    x = "",
+    y = "Mean change in eGFR"
+  ) +
+  theme_bw()
+
+plot
+```
+**Interpretation**
+
+New therapy group
+
+  - mean increase in eGFR is higher (around ~5–6 units)\
+  - confidence interval is entirely above zero\
+    - results suggests a consistent improvement in kidney function
+    
+Standard care group
+
+  - mean change is smaller (around ~1 unit)\
+  - confidence interval is wider and appears to include values near or slightly below zero\
+    - results suggests greater uncertainty and likely little to no improvement
+
+::: 
+-----------------------------------------------------------------
+
+### Estimated Risk Difference for Clinical Response
+::: {style="font-size:0.6em"}
+
+
+Goal: find the difference in response probabilities between the two treatment groups
+
+$$
+\hat{p}_{new}−\hat{p}_{standard}
+$$
+
+\hat{p}_{new}: proportion of patients who responded under the new therapy
+\hat{p}_{standard}: proportion who responded under standard care
+
+> How much does the probability of clinical response change between the two groups?
+
+positive value → higher response probability under the new therapy
+negative value → lower response probability under the new therapy
+value near zero → little or no difference between groups
+
+::: 
+------------------------------------------------------------------------
+
+### Estimated Risk Difference for Clinical Response
+::: {style="font-size:0.6em"}
+```{r, echo=FALSE}
+response_summary <- trial_df |>
+  group_by(treatment) |>
+  summarise(
+    n = n(),
+    responses = sum(response),
+    nonresponses = n() - responses,
+    risk = mean(response)
+  )
+
+response_summary
+
+risk_new <- response_summary$risk[response_summary$treatment == "New therapy"]
+risk_std <- response_summary$risk[response_summary$treatment == "Standard care"]
+
+risk_difference <- risk_new - risk_std
+risk_difference
+```
+
+**Interpretation**
+
+New therapy risk = 0.732
+→ 73.2% of patients responded
+
+Standard care risk = 0.495
+→ 49.5% of patients responded
+
+Out of 100 patients:
+
+  ~ 73 would respond under the new therapy
+  ~ 50 would respond under standard care
+  
+Risk Difference: $0.732−0.495=0.236$
+
+probability of clinical response is 23.6 percentage points higher under the new therapy compared to standard care
+
+::: 
+------------------------------------------------------------------------
+
+
+
+
+
+### Estimated Risk Ratio for Clinical Response
+::: {style="font-size:0.6em"}
+```{r, echo=FALSE}
+risk_ratio <- risk_new / risk_std
+risk_ratio
+```
+
+risk ratio compares the response probabilities between the two groups
+
+$$
+\frac{\hat{p}_{\text{new}}}{\hat{p}_{\text{standard}}}
+$$
+\hat{p}_{new}: response probability under the new therapy
+\hat{p}_{standard}: response probability under standard care
+
+$$
+\frac{0.732}{0.495}}=1.48
+$$
+- patients receiving the new therapy are about 1.48 times as likely to respond as those receiving standard care
+- risk difference [0.236] → response is 23.6 percentage points higher
+- risk ratio [1.48] → response is 48% higher relative to standard care
+::: 
+-----------------------------------------------------------------
+
+### Odds of Response in Each Group
+::: {style="font-size:0.6em"}
+```{r}
+response_odds <- response_summary |>
+  mutate(odds = risk / (1 - risk))
+
+response_odds
+```
+
+
+
+> How do the odds of response compare between the two groups?
+
+**Interpretation**
+
+$$
+odds = \frac{p}{1-p}
+$$
+
+Where:
+
+**p**: probability of response
+**1−p**: probability of no response
+
+New therapy [odds = 2.73]
+  - odds of response are ~ 2.7
+  - response is much more likely than non-response
+
+Standard care [odds = 0.98]
+  - odds are about 1 
+  - response and non-response are likely to occur at similar rates
+
+
+:::
+-----------------------------------------------------------------
+
+### Estimated Odds Ratio for Clinical Response
+::: {style="font-size:0.6em"}
+```{r, echo=FALSE}
+odds_ratio <- response_odds$odds[response_odds$treatment == "New therapy"] /
+  response_odds$odds[response_odds$treatment == "Standard care"]
+
+odds_ratio
+```
+
+Goal: estimate the relative odds of response under the new therapy compared with standard care
+
+Interpretation: odds of clinical response are approximately 2.78 times higher under the new therapy compared to standard care
+::: 
+-----------------------------------------------------------------
+
+
+
+### Summary
+::: {style="font-size:0.6em"}
+
+- discussed different metrics used to estimate how outcomes differ between groups in the population
+
+Comparative estimation follows a common structure:
+
+1. estimate the outcome within each group
+2. combine those estimates into a comparison
+3. interpret the result as a population effect
+
+Key measures:
+
+  - mean difference → difference in averages (continuous outcomes)
+  - risk difference → absolute difference in probabilities
+  - risk ratio → relative difference in probabilities
+  - odds ratio → relative difference on the odds scale
+
+::: 
+
